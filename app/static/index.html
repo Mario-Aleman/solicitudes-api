@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Solicitudes académicas</title>
+    <style>
+        :root {
+            --ink: #14213d;
+            --acc: #0b8f8f;
+            --line: #d5dee8;
+            --bg: #eef3f7
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font: 16px/1.5 system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--ink)
+        }
+
+        main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px 16px
+        }
+
+        h1 {
+            margin: 0 0 4px
+        }
+
+        p.s {
+            margin: 0 0 20px;
+            color: #55627a
+        }
+
+        .c {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 18px
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin: 10px 0 4px
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            font: inherit
+        }
+
+        button {
+            margin-top: 14px;
+            background: var(--acc);
+            color: #fff;
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 20px;
+            font: 700 1rem system-ui;
+            cursor: pointer
+        }
+
+        #msg {
+            margin-top: 12px;
+            font-weight: 600
+        }
+
+        .ok {
+            color: #1d8a4f
+        }
+
+        .er {
+            color: #c23b3b
+        }
+
+        .t {
+            overflow-x: auto
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 560px
+        }
+
+        th,
+        td {
+            padding: 8px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            font-size: .9rem
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <h1>Solicitudes académicas</h1>
+        <p class="s">Registra una solicitud. Se guarda en Excel Online y se avisa por Telegram.</p>
+        <div class="c">
+            <div id="f">
+                <label for="e">Nombre del estudiante</label><input id="e" maxlength="100">
+                <label for="co">Correo</label><input id="co" type="email">
+                <label for="t">Tipo de solicitud</label><select id="t">
+                    <option>Certificación</option>
+                    <option>Homologación</option>
+                    <option>Cancelación de materia</option>
+                    <option>Reintegro</option>
+                    <option>Otro</option>
+                </select>
+                <label for="d">Descripción</label><textarea id="d" rows="3" maxlength="500"></textarea>
+                <button id="b" type="button">Registrar solicitud</button>
+                <div id="msg" role="status"></div>
+            </div>
+        </div>
+        <div class="c"><button id="r" type="button" style="margin:0 0 10px">Actualizar lista</button>
+            <div class="t">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Estudiante</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tb"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    <script>
+        const $ = i => document.getElementById(i);
+        async function listar() {
+            try {
+                const r = await fetch('/solicitudes'); if (!r.ok) throw 0; const j = await r.json(); const tb = $('tb'); tb.innerHTML = '';
+                j.solicitudes.slice().reverse().forEach(s => { const tr = tb.insertRow();[s.id, s.fecha, s.estudiante, s.tipo, s.estado].forEach(v => { tr.insertCell().textContent = v }) })
+            }
+            catch (e) { $('msg').className = 'er'; $('msg').textContent = 'No se pudo cargar la lista.' }
+        }
+        $('b').onclick = async () => {
+            const m = $('msg'); m.className = ''; m.textContent = 'Enviando…';
+            const r = await fetch('/solicitudes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estudiante: $('e').value, correo: $('co').value, tipo: $('t').value, descripcion: $('d').value }) });
+            if (r.ok) { const j = await r.json(); m.className = 'ok'; m.textContent = 'Solicitud registrada con ID ' + j.id; $('d').value = ''; listar() }
+            else { const j = await r.json().catch(() => ({})); m.className = 'er'; m.textContent = typeof j.detail === 'string' ? j.detail : 'Revisa los datos: nombre, correo y descripción (mínimo 5 caracteres).' }
+        };
+        $('r').onclick = listar; listar();
+    </script>
+</body>
+
+</html>

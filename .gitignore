@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+venv/
+.venv/
+resultados_carga.csv
+credentials.json
+probar_google.py
